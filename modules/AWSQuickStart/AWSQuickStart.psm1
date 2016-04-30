@@ -1,7 +1,7 @@
 function New-AWSQuickStartWaitHandle {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory, ValueFromPipeline=$true)]
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [string]
         $Handle,
 
@@ -45,15 +45,15 @@ function New-AWSQuickStartWaitHandle {
 function New-AWSQuickStartResourceSignal {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory=$true)]
         [string]
         $Stack,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory=$true)]
         [string]
         $Resource,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory=$true)]
         [string]
         $Region,
 
@@ -144,7 +144,9 @@ function Get-AWSQuickStartWaitHandle {
             $ErrorActionPreference = "Stop"
 
             Write-Verbose "Getting Handle key value from $Path"
-            Get-ItemProperty $Path | Select-Object -ExpandProperty Handle
+            $key = Get-ItemProperty $Path
+
+            return $key.Handle
         }
         catch {
             Write-Verbose $_.Exception.Message
@@ -164,13 +166,19 @@ function Get-AWSQuickStartResourceSignal {
         $ErrorActionPreference = "Stop"
 
         Write-Verbose "Getting Stack, Resource, and Region key values from $Path"
+        $key = Get-ItemProperty $Path
         $resourceSignal = @{
-            Stack = $(Get-ItemProperty $Path | Select-Object -ExpandProperty Stack)
-            Resource = $(Get-ItemProperty $Path | Select-Object -ExpandProperty Resource)
-            Region = $(Get-ItemProperty $Path | Select-Object -ExpandProperty Region)
+            Stack = $key.Stack
+            Resource = $key.Resource
+            Region = $key.Region
         }
+        $toReturn = New-Object -TypeName PSObject -Property $resourceSignal
 
-        New-Object -TypeName PSObject -Property $resourceSignal
+        if ($toReturn.Stack -and $toReturn.Resource -and $toReturn.Region) {
+            return $toReturn
+        } else {
+            return $null
+        }
     }
     catch {
         Write-Verbose $_.Exception.Message
