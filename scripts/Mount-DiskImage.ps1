@@ -1,4 +1,5 @@
-﻿param(
+﻿[CmdletBinding()]
+param(
     [Parameter(Mandatory=$true)]
     [string]$ImagePath
 )
