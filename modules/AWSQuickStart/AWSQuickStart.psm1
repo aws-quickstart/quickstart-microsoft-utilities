@@ -185,6 +185,32 @@ function Get-AWSQuickStartResourceSignal {
     }
 }
 
+function Remove-AWSQuickStartWaitHandle {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory=$false, ValueFromPipeline=$true)]
+        [string]
+        $Path = 'HKLM:\SOFTWARE\AWSQuickStart\'
+    )
+
+    process {
+        try {
+            $ErrorActionPreference = "Stop"
+
+            Write-Verbose "Getting Handle key value from $Path"
+            $key = Get-ItemProperty $Path -Name Handle -ErrorAction SilentlyContinue
+
+            if ($key) {
+                Write-Verbose "Removing Handle key value from $($key.PSPath)"
+                Remove-ItemProperty $key.PSPath -Name Handle
+            }
+        }
+        catch {
+            Write-Verbose $_.Exception.Message
+        }
+    }
+}
+
 function Write-AWSQuickStartEvent {
     [CmdletBinding()]
     Param(
