@@ -14,31 +14,31 @@ function New-AWSQuickStartWaitHandle {
         $Base64Handle
     )
 
-    process {
-        try {
-            Write-Verbose "Creating $Path"
-            New-Item $Path -ErrorAction Stop
+    try {
+        $ErrorActionPreference = "Stop"
 
-            if ($Base64Handle) {
-                Write-Verbose "Trying to decode handle Base64 string as UTF8 string"
-                $decodedHandle = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($Handle))
-                if ($decodedHandle -notlike "http*") {
-                    Write-Verbose "Now trying to decode handle Base64 string as Unicode string"
-                    $decodedHandle = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String($Handle))
-                }
-                Write-Verbose "Decoded handle string: $decodedHandle"
-                $Handle = $decodedHandle
+        Write-Verbose "Creating $Path"
+        New-Item $Path -Force
+
+        if ($Base64Handle) {
+            Write-Verbose "Trying to decode handle Base64 string as UTF8 string"
+            $decodedHandle = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($Handle))
+            if ($decodedHandle -notlike "http*") {
+                Write-Verbose "Now trying to decode handle Base64 string as Unicode string"
+                $decodedHandle = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String($Handle))
             }
+            Write-Verbose "Decoded handle string: $decodedHandle"
+            $Handle = $decodedHandle
+        }
 
-            Write-Verbose "Creating Handle Registry Key"
-            New-ItemProperty -Path $Path -Name Handle -Value $Handle -ErrorAction Stop  
+        Write-Verbose "Creating Handle Registry Key"
+        New-ItemProperty -Path $Path -Name Handle -Value $Handle -Force
             
-            Write-Verbose "Creating ErrorCount Registry Key"
-            New-ItemProperty -Path $Path -Name ErrorCount -Value 0 -PropertyType dword -ErrorAction Stop                  
-        }
-        catch {
-            Write-Verbose $_.Exception.Message
-        }
+        Write-Verbose "Creating ErrorCount Registry Key"
+        New-ItemProperty -Path $Path -Name ErrorCount -Value 0 -PropertyType dword -Force
+    }
+    catch {
+        Write-Verbose $_.Exception.Message
     }
 }
 
@@ -66,19 +66,19 @@ function New-AWSQuickStartResourceSignal {
         $ErrorActionPreference = "Stop"
 
         Write-Verbose "Creating $Path"
-        New-Item $Path
+        New-Item $Path -Force
 
         Write-Verbose "Creating Stack Registry Key"
-        New-ItemProperty -Path $Path -Name Stack -Value $Stack
+        New-ItemProperty -Path $Path -Name Stack -Value $Stack -Force
 
         Write-Verbose "Creating Resource Registry Key"
-        New-ItemProperty -Path $Path -Name Resource -Value $Resource
+        New-ItemProperty -Path $Path -Name Resource -Value $Resource -Force
 
         Write-Verbose "Creating Region Registry Key"
-        New-ItemProperty -Path $Path -Name Region -Value $Region
+        New-ItemProperty -Path $Path -Name Region -Value $Region -Force
 
         Write-Verbose "Creating ErrorCount Registry Key"
-        New-ItemProperty -Path $Path -Name ErrorCount -Value 0 -PropertyType dword
+        New-ItemProperty -Path $Path -Name ErrorCount -Value 0 -PropertyType dword -Force
     }
     catch {
         Write-Verbose $_.Exception.Message
@@ -198,16 +198,42 @@ function Remove-AWSQuickStartWaitHandle {
             $ErrorActionPreference = "Stop"
 
             Write-Verbose "Getting Handle key value from $Path"
-            $key = Get-ItemProperty $Path -Name Handle -ErrorAction SilentlyContinue
+            $key = Get-ItemProperty -Path $Path -Name Handle -ErrorAction SilentlyContinue
 
             if ($key) {
-                Write-Verbose "Removing Handle key value from $($key.PSPath)"
-                Remove-ItemProperty $key.PSPath -Name Handle
+                Write-Verbose "Removing Handle key value from $Path"
+                Remove-ItemProperty -Path $Path -Name Handle
             }
         }
         catch {
             Write-Verbose $_.Exception.Message
         }
+    }
+}
+
+function Remove-AWSQuickStartResourceSignal {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory=$false)]
+        [string]
+        $Path = 'HKLM:\SOFTWARE\AWSQuickStart\'
+    )
+
+    try {
+        $ErrorActionPreference = "Stop"
+
+        foreach ($keyName in @('Stack','Resource','Region')) {
+            Write-Verbose "Getting Stack, Resource, and Region key values from $Path"
+            $key = Get-ItemProperty -Path $Path -Name $keyName -ErrorAction SilentlyContinue
+
+            if ($key) {
+                Write-Verbose "Removing $keyName key value from $Path"
+                Remove-ItemProperty -Path $Path -Name $keyName
+            }
+        }
+    }
+    catch {
+        Write-Verbose $_.Exception.Message
     }
 }
 
