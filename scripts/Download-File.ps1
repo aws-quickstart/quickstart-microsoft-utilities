@@ -37,9 +37,46 @@ try {
 
     $qualifier = Split-Path $Source -Qualifier
     if ($qualifier -eq "s3:") {
-        Read-S3Object -BucketName (Get-S3BucketName -S3Uri $Source) -Key (Get-S3Key -S3Uri $Source) -File $Destination
+        $tries = 5
+        while ($tries -ge 1) {
+            try {
+                Read-S3Object -BucketName (Get-S3BucketName -S3Uri $Source) -Key (Get-S3Key -S3Uri $Source) -File $Destination -ErrorAction Stop
+                break
+            }
+            catch {
+                $tries--
+                Write-Verbose "Exception:"
+                Write-Verbose "$_"
+                if ($tries -lt 1) {
+                    throw $_
+                }
+                else {
+                    Write-Verbose "Failed download. Retrying again in 5 seconds"
+                    Start-Sleep 5
+                }
+            }
+        }
     } elseif ($qualifier -in ("http:","https:")) {
-        (New-Object System.Net.WebClient).DownloadFile($Source,$Destination)
+        Write-Verbose "Trying to download from $Source"
+        $tries = 5
+        while ($tries -ge 1) {
+            try {
+                (New-Object System.Net.WebClient).DownloadFile($Source,$Destination)
+                break
+            }
+            catch {
+                $tries--
+                Write-Verbose "Exception:"
+                Write-Verbose "$_"
+                if ($tries -lt 1) {
+                    throw $_
+                }
+                else {
+                    Write-Verbose "Failed download. Retrying again in 5 seconds"
+                    Start-Sleep 5
+                }
+            }
+        }
     } else {
         throw "$Source is not a valid S3, HTTP, or HTTPS URI"
     }
