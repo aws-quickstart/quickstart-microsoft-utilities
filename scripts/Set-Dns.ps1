@@ -4,7 +4,7 @@ param(
     [string]$ns1,
 
     [Parameter(Mandatory=$true)]
-    [switch]$ns2
+    [string]$ns2
 )
 
 try {
