@@ -14,7 +14,10 @@ param(
     [string]$DomainDNSName,
 
     [Parameter(Mandatory=$true)]
-    [string]$ServiceAccount
+    [string]$ServiceAccountUser
+
+    [Parameter(Mandatory=$true)]
+    [string]$ServiceAccountPassword
 
 )
 
@@ -24,9 +27,9 @@ try {
 
     $DomainAdminPassword = ConvertTo-SecureString $DomainAdminPassword -AsPlainText -Force
     $DomainAdminCreds = New-Object System.Management.Automation.PSCredential('$DomainNetBIOSName\$DomainAdminUser', $DomainAdminPassword)
-    $SQLServiceAccountPassword = ConvertTo-SecureString $SQLServiceAccountPassword -AsPlainText -Force
-    $UserPrincipalName = $ServiceAccount + "@" + $DomainDNSName
-    New-ADUser -Name $ServiceAccount -UserPrincipalName $UserPrincipalName -AccountPassword $SQLServiceAccountPassword -Enabled $true -PasswordNeverExpires $true -EA 0 -ComputerName $ADServer1NetBIOSName -Credential $DomainAdminCreds
+    $ServiceAccountPassword = ConvertTo-SecureString $ServiceAccountPassword -AsPlainText -Force
+    $UserPrincipalName = $ServiceAccountUser + "@" + $DomainDNSName
+    New-ADUser -Name $ServiceAccountUser -UserPrincipalName $UserPrincipalName -AccountPassword $ServiceAccountPassword -Enabled $true -PasswordNeverExpires $true -EA 0 -ComputerName $ADServer1NetBIOSName -Credential $DomainAdminCreds
 
 }
 catch {
