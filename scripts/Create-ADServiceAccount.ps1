@@ -14,10 +14,13 @@ param(
     [string]$DomainDNSName,
 
     [Parameter(Mandatory=$true)]
-    [string]$ServiceAccountUser
+    [string]$ServiceAccountUser,
 
     [Parameter(Mandatory=$true)]
-    [string]$ServiceAccountPassword
+    [string]$ServiceAccountPassword,
+
+    [Parameter(Mandatory=$true)]
+    [string]$ADServerNetBIOSName
 
 )
 
@@ -25,12 +28,15 @@ try {
     Start-Transcript -Path C:\cfn\log\Create-ADServiceAccount.ps1.txt -Append
     $ErrorActionPreference = "Stop"
 
-    $DomainAdminPassword = ConvertTo-SecureString $DomainAdminPassword -AsPlainText -Force
-    $DomainAdminCreds = New-Object System.Management.Automation.PSCredential('$DomainNetBIOSName\$DomainAdminUser', $DomainAdminPassword)
-    $ServiceAccountPassword = ConvertTo-SecureString $ServiceAccountPassword -AsPlainText -Force
+    $DomainAdminFullUser = $DomainNetBIOSName + '\' + $DomainAdminUser
+    $DomainAdminSecurePassword = ConvertTo-SecureString $DomainAdminPassword -AsPlainText -Force
+    $DomainAdminCreds = New-Object System.Management.Automation.PSCredential($DomainAdminFullUser, $DomainAdminSecurePassword)
+    $ServiceAccountSecurePassword = ConvertTo-SecureString $ServiceAccountPassword -AsPlainText -Force
     $UserPrincipalName = $ServiceAccountUser + "@" + $DomainDNSName
-    New-ADUser -Name $ServiceAccountUser -UserPrincipalName $UserPrincipalName -AccountPassword $ServiceAccountPassword -Enabled $true -PasswordNeverExpires $true -EA 0 -ComputerName $ADServer1NetBIOSName -Credential $DomainAdminCreds
-
+    $CreateUserPs={ 
+        New-ADUser -Name $args[0] -UserPrincipalName $args[1] -AccountPassword $args[2] -Enabled $true -PasswordNeverExpires $true -EA 0
+    }
+    Invoke-Command -Scriptblock $CreateUserPs -ComputerName $ADServerNetBIOSName -Credential $DomainAdminCreds -ArgumentList $ServiceAccountUser,$UserPrincipalName,$ServiceAccountSecurePassword
 }
 catch {
     $_ | Write-AWSQuickStartException
