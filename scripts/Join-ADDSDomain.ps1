@@ -17,6 +17,9 @@ param (
 )
 
 try {
+    Start-Transcript -Path C:\cfn\log\Join-ADDSDomain.ps1.txt -Append
+    $ErrorActionPreference = "Stop"
+
     $securePassword = ConvertTo-SecureString $Password -AsPlainText -Force
     $creds = New-Object System.Management.Automation.PSCredential -ArgumentList $UserName,$securePassword
 
