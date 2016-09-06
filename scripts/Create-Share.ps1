@@ -36,11 +36,13 @@ try {
     $DomainAdminCreds = New-Object System.Management.Automation.PSCredential($DomainAdminFullUser, $DomainAdminSecurePassword)
 
     $CreateFolderPs={
+        $ErrorActionPreference = "Stop"
         New-Item -ItemType directory -Path $args[0] -Name $args[1]
     }
     Invoke-Command -Scriptblock $CreateFolderPs -ComputerName $ServerName -Credential $DomainAdminCreds -ArgumentList $FolderPath,$FolderName
 
     $CreateSharePs={
+        $ErrorActionPreference = "Stop"
         New-SmbShare -Name $args[0] -Path $args[1] -FullAccess everyone
     }
     Invoke-Command -Scriptblock $CreateSharePs -ComputerName $ServerName -Credential $DomainAdminCreds -ArgumentList $ShareName,$Path

@@ -33,7 +33,8 @@ try {
     $DomainAdminCreds = New-Object System.Management.Automation.PSCredential($DomainAdminFullUser, $DomainAdminSecurePassword)
     $ServiceAccountSecurePassword = ConvertTo-SecureString $ServiceAccountPassword -AsPlainText -Force
     $UserPrincipalName = $ServiceAccountUser + "@" + $DomainDNSName
-    $CreateUserPs={ 
+    $CreateUserPs={
+        $ErrorActionPreference = "Stop" 
         New-ADUser -Name $args[0] -UserPrincipalName $args[1] -AccountPassword $args[2] -Enabled $true -PasswordNeverExpires $true -EA 0
     }
     Invoke-Command -Scriptblock $CreateUserPs -ComputerName $ADServerNetBIOSName -Credential $DomainAdminCreds -ArgumentList $ServiceAccountUser,$UserPrincipalName,$ServiceAccountSecurePassword
