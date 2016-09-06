@@ -17,10 +17,13 @@ param(
     [string]$Path,
 
     [Parameter(Mandatory=$false)]
-    [string]$ServerName='localhost'
-ShareName
-Path=c:\\sqlinstall
-ADServer1NetBIOSName
+    [string]$ServerName='localhost',
+
+    [Parameter(Mandatory=$true)]
+    [string]$FolderPath,
+
+    [Parameter(Mandatory=$true)]
+    [string]$FolderName
 
 )
 
@@ -31,10 +34,16 @@ try {
     $DomainAdminFullUser = $DomainNetBIOSName + '\' + $DomainAdminUser
     $DomainAdminSecurePassword = ConvertTo-SecureString $DomainAdminPassword -AsPlainText -Force
     $DomainAdminCreds = New-Object System.Management.Automation.PSCredential($DomainAdminFullUser, $DomainAdminSecurePassword)
+
     $CreateFolderPs={
         New-SmbShare -Name $args[0] -Path $args[1] -FullAccess everyone
     }
     Invoke-Command -Scriptblock $CreateFolderPs -ComputerName $ServerName -Credential $DomainAdminCreds -ArgumentList $ShareName,$Path
+
+    $CreateSharePs={
+        New-SmbShare -Name $args[0] -Path $args[1] -FullAccess everyone
+    }
+    Invoke-Command -Scriptblock $CreateSharePs -ComputerName $ServerName -Credential $DomainAdminCreds -ArgumentList $ShareName,$Path
 }
 catch {
     $_ | Write-AWSQuickStartException
