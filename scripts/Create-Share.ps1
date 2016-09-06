@@ -28,7 +28,7 @@ param(
 )
 
 try {
-    Start-Transcript -Path C:\cfn\log\Create-Folder.ps1.txt -Append
+    Start-Transcript -Path C:\cfn\log\Create-Share.ps1.txt -Append
     $ErrorActionPreference = "Stop"
 
     $DomainAdminFullUser = $DomainNetBIOSName + '\' + $DomainAdminUser
@@ -36,9 +36,9 @@ try {
     $DomainAdminCreds = New-Object System.Management.Automation.PSCredential($DomainAdminFullUser, $DomainAdminSecurePassword)
 
     $CreateFolderPs={
-        New-SmbShare -Name $args[0] -Path $args[1] -FullAccess everyone
+        New-Item -ItemType directory -Path $args[0] -Name $args[1]
     }
-    Invoke-Command -Scriptblock $CreateFolderPs -ComputerName $ServerName -Credential $DomainAdminCreds -ArgumentList $ShareName,$Path
+    Invoke-Command -Scriptblock $CreateFolderPs -ComputerName $ServerName -Credential $DomainAdminCreds -ArgumentList $FolderPath,$FolderName
 
     $CreateSharePs={
         New-SmbShare -Name $args[0] -Path $args[1] -FullAccess everyone
