@@ -33,7 +33,7 @@ function New-AWSQuickStartWaitHandle {
 
         Write-Verbose "Creating Handle Registry Key"
         New-ItemProperty -Path $Path -Name Handle -Value $Handle -Force
-            
+
         Write-Verbose "Creating ErrorCount Registry Key"
         New-ItemProperty -Path $Path -Name ErrorCount -Value 0 -PropertyType dword -Force
     }
@@ -95,9 +95,9 @@ function Get-AWSQuickStartErrorCount {
     )
 
     process {
-        try {            
+        try {
             Write-Verbose "Getting ErrorCount Registry Key"
-            Get-ItemProperty -Path $Path -Name ErrorCount -ErrorAction Stop | Select-Object -ExpandProperty ErrorCount                 
+            Get-ItemProperty -Path $Path -Name ErrorCount -ErrorAction Stop | Select-Object -ExpandProperty ErrorCount
         }
         catch {
             Write-Verbose $_.Exception.Message
@@ -118,12 +118,12 @@ function Set-AWSQuickStartErrorCount {
     )
 
     process {
-        try {  
+        try {
             $currentCount = Get-AWSQuickStartErrorCount
             $currentCount += $Count
-                      
+
             Write-Verbose "Creating ErrorCount Registry Key"
-            Set-ItemProperty -Path $Path -Name ErrorCount -Value $currentCount -ErrorAction Stop                  
+            Set-ItemProperty -Path $Path -Name ErrorCount -Value $currentCount -ErrorAction Stop
         }
         catch {
             Write-Verbose $_.Exception.Message
@@ -256,10 +256,10 @@ function Write-AWSQuickStartEvent {
         }
         else {
             Write-Verbose "AWSQuickStart Eventlog Source exists"
-        }   
-        
-        Write-Verbose "Writing message to application log"   
-           
+        }
+
+        Write-Verbose "Writing message to application log"
+
         try {
             Write-EventLog -LogName Application -Source AWSQuickStart -EntryType $EntryType -EventId 1001 -Message $Message
         }
@@ -285,12 +285,17 @@ function Write-AWSQuickStartException {
             Write-Verbose "Getting total error count"
             $errorTotal = Get-AWSQuickStartErrorCount
 
-            $errorMessage = "Command failure in {0} {1} on line {2} `nException: {3}" -f $ErrorRecord.InvocationInfo.MyCommand.name, 
+            $errorMessage = "Command failure in {0} {1} on line {2} `nException: {3}" -f $ErrorRecord.InvocationInfo.MyCommand.name,
                                                         $ErrorRecord.InvocationInfo.ScriptName, $ErrorRecord.InvocationInfo.ScriptLineNumber, $ErrorRecord.Exception.ToString()
+
+            $CmdSafeErrorMessage = $errorMessage -replace '[^a-zA-Z0-9\s\.]', ''
+            if ($CmdSafeErrorMessage.length -gt 255) {
+                $CmdSafeErrorMessage = $CmdSafeErrorMessage.substring(0,252) + '...'
+            }
 
             $handle = Get-AWSQuickStartWaitHandle -ErrorAction SilentlyContinue
             if ($handle) {
-                Invoke-Expression "cfn-signal.exe -e 1 --reason='$errorMessage' '$handle'"
+                Invoke-Expression "cfn-signal.exe -e 1 --reason='$CmdSafeErrorMessage' '$handle'"
             } else {
                 $resourceSignal = Get-AWSQuickStartResourceSignal -ErrorAction SilentlyContinue
                 if ($resourceSignal) {
@@ -304,7 +309,7 @@ function Write-AWSQuickStartException {
             Write-Verbose $_.Exception.Message
         }
 
-        Write-AWSQuickStartEvent -Message $errorMessage        
+        Write-AWSQuickStartEvent -Message $errorMessage
     }
 }
 
@@ -312,7 +317,7 @@ function Write-AWSQuickStartStatus {
     [CmdletBinding()]
     Param()
 
-    process {   
+    process {
         try {
             Write-Verbose "Checking error count"
             if((Get-AWSQuickStartErrorCount) -eq 0) {
@@ -335,4 +340,3 @@ function Write-AWSQuickStartStatus {
         }
     }
 }
-
