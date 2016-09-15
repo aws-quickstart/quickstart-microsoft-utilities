@@ -3,10 +3,10 @@ param(
 
     [Parameter(Mandatory=$true)]
     [string]$DomainNetBIOSName,
-    
+
     [Parameter(Mandatory=$true)]
     [string]$DomainAdminUser,
-    
+
     [Parameter(Mandatory=$true)]
     [string]$DomainAdminPassword,
 
@@ -34,10 +34,10 @@ try {
     $ServiceAccountSecurePassword = ConvertTo-SecureString $ServiceAccountPassword -AsPlainText -Force
     $UserPrincipalName = $ServiceAccountUser + "@" + $DomainDNSName
     $CreateUserPs={
-        $ErrorActionPreference = "Stop" 
-        New-ADUser -Name $args[0] -UserPrincipalName $args[1] -AccountPassword $args[2] -Enabled $true -PasswordNeverExpires $true -EA 0
+        $ErrorActionPreference = "Stop"
+        New-ADUser -Name $Using:ServiceAccountUser -UserPrincipalName $Using:UserPrincipalName -AccountPassword $Using:ServiceAccountSecurePassword -Enabled $true -PasswordNeverExpires $true -EA 0
     }
-    Invoke-Command -Scriptblock $CreateUserPs -ComputerName $ADServerNetBIOSName -Credential $DomainAdminCreds -ArgumentList $ServiceAccountUser,$UserPrincipalName,$ServiceAccountSecurePassword
+    Invoke-Command -Scriptblock $CreateUserPs -ComputerName $ADServerNetBIOSName -Credential $DomainAdminCreds
 }
 catch {
     $_ | Write-AWSQuickStartException

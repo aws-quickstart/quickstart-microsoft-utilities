@@ -40,15 +40,15 @@ try {
 
     $CreateFolderPs={
         $ErrorActionPreference = "Stop"
-        New-Item -ItemType directory -Path $args[0] -Name $args[1]
+        New-Item -ItemType directory -Path $Using:FolderPath -Name $Using:FolderName
     }
     Invoke-Command -Scriptblock $CreateFolderPs -ComputerName $ServerName -Credential $DomainAdminCreds -ArgumentList $FolderPath,$FolderName
 
     $CreateSharePs={
         $ErrorActionPreference = "Stop"
-        New-SmbShare -Name $args[0] -Path $args[1] -FullAccess $FullAccessUser
+        New-SmbShare -Name $Using:ShareName -Path $Using:Path -FullAccess $FullAccessUser
     }
-    Invoke-Command -Scriptblock $CreateSharePs -ComputerName $ServerName -Credential $DomainAdminCreds -ArgumentList $ShareName,$Path
+    Invoke-Command -Scriptblock $CreateSharePs -ComputerName $ServerName -Credential $DomainAdminCreds
 }
 catch {
     $_ | Write-AWSQuickStartException
