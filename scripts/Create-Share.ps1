@@ -26,7 +26,7 @@ param(
     [string]$FolderName,
 
     [Parameter(Mandatory=$false)]
-    [string]$FullAccessUser='everyone'
+    [string[]]$FullAccessUser='everyone'
 
 )
 
