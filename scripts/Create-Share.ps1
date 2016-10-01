@@ -26,7 +26,7 @@ param(
     [string]$FolderName,
 
     [Parameter(Mandatory=$false)]
-    [string]$FullAccessUser='everyone'
+    [string[]]$FullAccessUser='everyone'
 
 )
 
@@ -46,7 +46,7 @@ try {
 
     $CreateSharePs={
         $ErrorActionPreference = "Stop"
-        New-SmbShare -Name $Using:ShareName -Path $Using:Path -FullAccess $FullAccessUser
+        New-SmbShare -Name $Using:ShareName -Path $Using:Path -FullAccess $Using:FullAccessUser
     }
     Invoke-Command -Scriptblock $CreateSharePs -ComputerName $ServerName -Credential $DomainAdminCreds
 }
