@@ -288,7 +288,7 @@ function Write-AWSQuickStartException {
             $errorMessage = "Command failure in {0} {1} on line {2} `nException: {3}" -f $ErrorRecord.InvocationInfo.MyCommand.name,
                                                         $ErrorRecord.InvocationInfo.ScriptName, $ErrorRecord.InvocationInfo.ScriptLineNumber, $ErrorRecord.Exception.ToString()
 
-            $CmdSafeErrorMessage = $errorMessage -replace '[^a-zA-Z0-9\s\.]', ''
+            $CmdSafeErrorMessage = $errorMessage -replace '[^a-zA-Z0-9\s\.\[\]\-,:_\\\/\(\)]', ''
             if ($CmdSafeErrorMessage.length -gt 255) {
                 $CmdSafeErrorMessage = $CmdSafeErrorMessage.substring(0,252) + '...'
             }
