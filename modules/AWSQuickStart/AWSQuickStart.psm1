@@ -310,6 +310,7 @@ function Write-AWSQuickStartException {
         }
 
         Write-AWSQuickStartEvent -Message $errorMessage
+        throw $CmdSafeErrorMessage
     }
 }
 
