@@ -308,9 +308,11 @@ function Write-AWSQuickStartException {
         catch {
             Write-Verbose $_.Exception.Message
         }
-
-        Write-AWSQuickStartEvent -Message $errorMessage
-        throw $CmdSafeErrorMessage
+        finally {
+            Write-AWSQuickStartEvent -Message $errorMessage
+            # throwing an exception to force cfn-init execution to stop
+            throw $CmdSafeErrorMessage
+        }
     }
 }
 
