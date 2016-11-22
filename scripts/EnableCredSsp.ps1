@@ -1,11 +1,11 @@
 [CmdletBinding()]
 param(
 
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory=$false)]
     [string]$DomainDNSName,
 
-    [Parameter(Mandatory=$true)]
-    [string]$ServerName
+    [Parameter(Mandatory=$false)]
+    [string]$ServerName='*'
 )
 
 try {
@@ -13,15 +13,21 @@ try {
     $ErrorActionPreference = "Stop"
 
     Enable-WSManCredSSP Client -DelegateComputer $ServerName -Force
-    Enable-WSManCredSSP Client -DelegateComputer *.$DomainDNSName -Force
+    if ($DomainDNSName) {
+        Enable-WSManCredSSP Client -DelegateComputer *.$DomainDNSName -Force
+    }
     Enable-WSManCredSSP Server -Force
 
-    $key = 'hklm:\SOFTWARE\Policies\Microsoft\Windows\CredentialsDelegation'
-    $ntlmkey = 'hklm:\SOFTWARE\Policies\Microsoft\Windows\CredentialsDelegation\AllowFreshCredentialsWhenNTLMOnly'
-    md $ntlmkey -Force
+    $parentkey = "hklm:\SOFTWARE\Policies\Microsoft\Windows"
+    $key = "$parentkey\CredentialsDelegation"
+    $ntlmkey = "$key\AllowFreshCredentialsWhenNTLMOnly"
+    New-Item -Path $parentkey -Name 'CredentialsDelegation' -Force
+    New-Item -Path $key -Name 'AllowFreshCredentialsWhenNTLMOnly' -Force
     New-ItemProperty -Path $key -Name AllowFreshCredentialsWhenNTLMOnly -Value 1 -PropertyType Dword -Force
-    New-ItemProperty -Path $ntlmkey -Name 1 -Value "WSMAN/*.$DomainDNSName" -PropertyType String -Force
-    New-ItemProperty -Path $ntlmkey -Name 2 -Value "WSMAN/$ServerName" -PropertyType String -Force
+    New-ItemProperty -Path $ntlmkey -Name 1 -Value "WSMAN/$ServerName" -PropertyType String -Force
+    if ($DomainDNSName) {
+        New-ItemProperty -Path $ntlmkey -Name 2 -Value "WSMAN/*.$DomainDNSName" -PropertyType String -Force
+    }
 
 }
 catch {
