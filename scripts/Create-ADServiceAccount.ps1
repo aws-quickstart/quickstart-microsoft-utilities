@@ -29,6 +29,7 @@ try {
     $ErrorActionPreference = "Stop"
 
     $DomainAdminFullUser = $DomainNetBIOSName + '\' + $DomainAdminUser
+    $ServiceAccountFullUser = $DomainNetBIOSName + '\' + $ServiceAccountUser
     $DomainAdminSecurePassword = ConvertTo-SecureString $DomainAdminPassword -AsPlainText -Force
     $DomainAdminCreds = New-Object System.Management.Automation.PSCredential($DomainAdminFullUser, $DomainAdminSecurePassword)
     $ServiceAccountSecurePassword = ConvertTo-SecureString $ServiceAccountPassword -AsPlainText -Force
@@ -37,11 +38,12 @@ try {
         $ErrorActionPreference = "Stop"
         try {
             Get-ADUser -Identity $Using:ServiceAccountUser
-            Set-ADAccountPassword -Identity $Using:ServiceAccountUser -Reset -NewPassword $Using:ServiceAccountSecurePassword
-            Set-ADUser -Identity $Using:ServiceAccountUser -PasswordNeverExpires $true -Enabled $true
         }
         catch {
             New-ADUser -Name $Using:ServiceAccountUser -UserPrincipalName $Using:UserPrincipalName -AccountPassword $Using:ServiceAccountSecurePassword -Enabled $true -PasswordNeverExpires $true
+        }
+        if ((new-object directoryservices.directoryentry "", $Using:ServiceAccountFullUser, $Using:ServiceAccountPassword).psbase.name -eq $null){
+            throw "Password for $Using:ServiceAccountUser is not valid"
         }
 
     }
