@@ -35,7 +35,13 @@ try {
     $UserPrincipalName = $ServiceAccountUser + "@" + $DomainDNSName
     $CreateUserPs={
         $ErrorActionPreference = "Stop"
-        New-ADUser -Name $Using:ServiceAccountUser -UserPrincipalName $Using:UserPrincipalName -AccountPassword $Using:ServiceAccountSecurePassword -Enabled $true -PasswordNeverExpires $true -EA 0
+        try {
+            Get-ADUser -Identity $Using:ServiceAccountUser
+        }
+        catch {
+            New-ADUser -Name $Using:ServiceAccountUser -UserPrincipalName $Using:UserPrincipalName -AccountPassword $Using:ServiceAccountSecurePassword -Enabled $true -PasswordNeverExpires $true -EA 0
+        }
+
     }
     Invoke-Command -Scriptblock $CreateUserPs -ComputerName $ADServerNetBIOSName -Credential $DomainAdminCreds
 }
