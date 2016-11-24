@@ -37,9 +37,11 @@ try {
         $ErrorActionPreference = "Stop"
         try {
             Get-ADUser -Identity $Using:ServiceAccountUser
+            Set-ADAccountPassword -Identity $Using:ServiceAccountUser -Reset -NewPassword $Using:ServiceAccountSecurePassword
+            Set-ADUser -Identity $Using:ServiceAccountUser -PasswordNeverExpires $true -Enabled $true
         }
         catch {
-            New-ADUser -Name $Using:ServiceAccountUser -UserPrincipalName $Using:UserPrincipalName -AccountPassword $Using:ServiceAccountSecurePassword -Enabled $true -PasswordNeverExpires $true -EA 0
+            New-ADUser -Name $Using:ServiceAccountUser -UserPrincipalName $Using:UserPrincipalName -AccountPassword $Using:ServiceAccountSecurePassword -Enabled $true -PasswordNeverExpires $true
         }
 
     }
