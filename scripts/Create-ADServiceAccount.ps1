@@ -19,8 +19,8 @@ param(
     [Parameter(Mandatory=$true)]
     [string]$ServiceAccountPassword,
 
-    [Parameter(Mandatory=$true)]
-    [string]$ADServerNetBIOSName
+    [Parameter(Mandatory=$false)]
+    [string]$ADServerNetBIOSName=$env:COMPUTERNAME
 
 )
 
@@ -36,6 +36,9 @@ try {
     $UserPrincipalName = $ServiceAccountUser + "@" + $DomainDNSName
     $CreateUserPs={
         $ErrorActionPreference = "Stop"
+        if (!(Get-Module -ListAvailable -Name ActiveDirectory)) {
+            Add-WindowsFeature RSAT-AD-PowerShell
+        }
         try {
             Get-ADUser -Identity $Using:ServiceAccountUser
         }
@@ -47,7 +50,12 @@ try {
         }
 
     }
-    Invoke-Command -Scriptblock $CreateUserPs -ComputerName $ADServerNetBIOSName -Credential $DomainAdminCreds
+    try {
+        Invoke-Command -Scriptblock $CreateUserPs -ComputerName $ADServerNetBIOSName -Credential $DomainAdminCreds
+    }
+    catch {
+        Invoke-Command -Scriptblock $CreateUserPs -ComputerName $ADServerNetBIOSName -Credential $DomainAdminCreds -Authentication Credssp
+    }
 }
 catch {
     $_ | Write-AWSQuickStartException
