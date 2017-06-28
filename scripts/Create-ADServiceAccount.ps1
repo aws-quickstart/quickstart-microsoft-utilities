@@ -34,27 +34,35 @@ try {
     $DomainAdminCreds = New-Object System.Management.Automation.PSCredential($DomainAdminFullUser, $DomainAdminSecurePassword)
     $ServiceAccountSecurePassword = ConvertTo-SecureString $ServiceAccountPassword -AsPlainText -Force
     $UserPrincipalName = $ServiceAccountUser + "@" + $DomainDNSName
-    $CreateUserPs={
+    $createUserSB = {
         $ErrorActionPreference = "Stop"
-        if (!(Get-Module -ListAvailable -Name ActiveDirectory)) {
-            Add-WindowsFeature RSAT-AD-PowerShell
+        if (-not (Get-Module -ListAvailable -Name ActiveDirectory)) {
+            Install-WindowsFeature RSAT-AD-PowerShell
         }
         try {
+            # Using try/catch since -ErrorAction SilentlyContinue has no effect
+            Write-Host "Searching for user $Using:ServiceAccountUser"
             Get-ADUser -Identity $Using:ServiceAccountUser
+            Write-Host "User already exists."
         }
         catch {
+            Write-Host "Creating user $Using:ServiceAccountUser"
             New-ADUser -Name $Using:ServiceAccountUser -UserPrincipalName $Using:UserPrincipalName -AccountPassword $Using:ServiceAccountSecurePassword -Enabled $true -PasswordNeverExpires $true
         }
-        if ((new-object directoryservices.directoryentry "", $Using:ServiceAccountFullUser, $Using:ServiceAccountPassword).psbase.name -eq $null){
-            throw "Password for $Using:ServiceAccountUser is not valid"
+        # Ensure that password is correct for the user
+        if ((New-Object System.DirectoryServices.DirectoryEntry "", $Using:ServiceAccountFullUser, $Using:ServiceAccountPassword).PSBase.Name -eq $null) {
+            throw "The password for $Using:ServiceAccountUser is incorrect"
         }
-
     }
+
     try {
-        Invoke-Command -Scriptblock $CreateUserPs -ComputerName $ADServerNetBIOSName -Credential $DomainAdminCreds
+        Write-Host "Invoking command on $ADServerNetBIOSName"
+        Invoke-Command -ScriptBlock $createUserSB -ComputerName $ADServerNetBIOSName -Credential $DomainAdminCreds
     }
     catch {
-        Invoke-Command -Scriptblock $CreateUserPs -ComputerName $ADServerNetBIOSName -Credential $DomainAdminCreds -Authentication Credssp
+        Write-Host $_
+        Write-Host "Retrying user creation with CredSSP."
+        Invoke-Command -ScriptBlock $createUserSB -ComputerName $ADServerNetBIOSName -Credential $DomainAdminCreds -Authentication Credssp
     }
 }
 catch {
