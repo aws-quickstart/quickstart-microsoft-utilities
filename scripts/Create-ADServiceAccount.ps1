@@ -39,19 +39,16 @@ try {
         if (-not (Get-Module -ListAvailable -Name ActiveDirectory)) {
             Install-WindowsFeature RSAT-AD-PowerShell
         }
-        try {
-            # Using try/catch since -ErrorAction SilentlyContinue has no effect
-            Write-Host "Searching for user $Using:ServiceAccountUser"
-            Get-ADUser -Identity $Using:ServiceAccountUser
+        Write-Host "Searching for user $Using:ServiceAccountUser"
+        if (Get-ADUser -Filter {sAMAccountName -eq $Using:ServiceAccountUser}) {
             Write-Host "User already exists."
-        }
-        catch {
+            # Ensure that password is correct for the user
+            if ((New-Object System.DirectoryServices.DirectoryEntry "", $Using:ServiceAccountFullUser, $Using:ServiceAccountPassword).PSBase.Name -eq $null) {
+                throw "The password for $Using:ServiceAccountUser is incorrect"
+            }
+        } else {
             Write-Host "Creating user $Using:ServiceAccountUser"
             New-ADUser -Name $Using:ServiceAccountUser -UserPrincipalName $Using:UserPrincipalName -AccountPassword $Using:ServiceAccountSecurePassword -Enabled $true -PasswordNeverExpires $true
-        }
-        # Ensure that password is correct for the user
-        if ((New-Object System.DirectoryServices.DirectoryEntry "", $Using:ServiceAccountFullUser, $Using:ServiceAccountPassword).PSBase.Name -eq $null) {
-            throw "The password for $Using:ServiceAccountUser is incorrect"
         }
     }
 
