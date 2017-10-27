@@ -2,7 +2,7 @@
 param (
     [Parameter(Mandatory=$true)]
     [string]$DomainName,
-    
+
     [Parameter(Mandatory=$true)]
     [string]$UserName,
 
@@ -17,7 +17,6 @@ param (
 )
 
 try {
-    Start-Transcript -Path C:\cfn\log\Join-ADDSDomain.ps1.txt -Append
     $ErrorActionPreference = "Stop"
 
     $securePassword = ConvertTo-SecureString $Password -AsPlainText -Force
@@ -41,11 +40,12 @@ try {
         $addComputerParams.Add("NewName",$NewName)
     }
 
-    if ($Restart) {
-        $addComputerParams.Add("Restart",$true)
-    }
-
     Add-Computer @addComputerParams
+
+    if ($Restart) {
+        # Execute restart after script exit and allow time for external services
+        Invoke-Expression -Command "shutdown.exe /r /t 10"
+    }
 }
 catch {
     $_ | Write-AWSQuickStartException

@@ -14,11 +14,12 @@ try {
         NewName = $NewName
     }
 
-    if ($Restart) {
-        $renameComputerParams.Add("Restart",$true)
-    }
-
     Rename-Computer @renameComputerParams
+
+    if ($Restart) {
+        # Execute restart after script exit and allow time for external services
+        Invoke-Expression -Command "shutdown.exe /r /t 10"
+    }
 }
 catch {
     $_ | Write-AWSQuickStartException
