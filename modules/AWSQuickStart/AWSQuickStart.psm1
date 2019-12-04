@@ -343,3 +343,62 @@ function Write-AWSQuickStartStatus {
         }
     }
 }
+
+function Write-AWSQuickStartCWLogsEntry {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)]
+        [string] $logGroupName,
+        [Parameter(Mandatory = $true)]
+        [string] $LogStreamName,
+        [Parameter(Mandatory = $true)]
+        [string] $LogString
+    )
+    Process {
+        try {
+            Write-Verbose "Checking for existing Log Group : $logGroupName"
+            #Determine if the LogGroup Exists
+            If (-Not (Get-CWLLogGroup -LogGroupNamePrefix $logGroupName)) {
+                Write-Verbose "No existing Log Group found. Creating new Log Group : $logGroupName"
+                New-CWLLogGroup -LogGroupName $logGroupName
+                Write-Verbose "Creating new Log Stream : $logStreamName"
+                New-CWLLogStream -LogGroupName $logGroupName -LogStreamName $logStreamName
+            }
+            #Determine if the LogStream Exists
+            Write-Verbose "Existing Log Group found. Checking for existing Log Stream"
+            If (-Not (Get-CWLLogStream -LogGroupName $logGroupName -LogStreamName $LogStreamName)) {
+                Write-Verbose "Creating new Log Stream in existing Log Group : $logStreamName"
+                New-CWLLogStream -LogGroupName $logGroupName -LogStreamName $logStreamName
+            }
+
+            $logEntry = New-Object -TypeName 'Amazon.CloudWatchLogs.Model.InputLogEvent'
+            $logEntry.Message = $LogString
+            $logEntry.Timestamp = (Get-Date).ToUniversalTime()
+            #Get the next sequence token
+            Write-Verbose "Checking for sequence token"
+            $SequenceToken = (Get-CWLLogStream -LogGroupName $logGroupName -LogStreamNamePrefix $logStreamName).UploadSequenceToken
+            if ($SequenceToken) {
+                $splat = @{
+                    LogEvent      = $logEntry
+                    LogGroupName  = $logGroupName
+                    LogStreamName = $logStreamName
+                    SequenceToken = $SequenceToken
+                }
+                Write-Verbose "Writing new log entry to existing Log Stream"
+                Write-CWLLogEvent @splat
+            }
+            else {
+                $splat = @{
+                    LogEvent      = $logEntry
+                    LogGroupName  = $logGroupName
+                    LogStreamName = $logStreamName
+                }
+                Write-Verbose "Writing new log entry to newly created Log Stream"
+                Write-CWLLogEvent @splat
+            }
+        }
+        catch {
+            Write-Verbose $_.Exception.Message
+        }
+    }
+}
