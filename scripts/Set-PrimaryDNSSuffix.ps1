@@ -9,8 +9,8 @@ param (
 $ComputerNamePhysicalDnsDomain = 6
 
 try {
-Write-Verbose "Setting DNS Suffix"
-Add-Type -TypeDefinition @"
+    Write-Verbose "Setting DNS Suffix"
+    Add-Type -TypeDefinition @"
 using System;
 using System.Runtime.InteropServices;
 
@@ -30,9 +30,17 @@ namespace ComputerSystem {
     }
 }
 "@
-[ComputerSystem.Identification]::SetPrimaryDnsSuffix($Suffix)
-Write-Verbose "Rebooting computer..."
-Restart-Computer -Force
+
+    [ComputerSystem.Identification]::SetPrimaryDnsSuffix($Suffix)
+
+    Write-Verbose "Rebooting computer..."
+
+    $ErrorActionPreference = "Stop"
+
+    $shutdown = Start-Process -FilePath "shutdown.exe" -ArgumentList @("/r", "/t 10") -Wait -NoNewWindow -PassThru
+    if ($shutdown.ExitCode -ne 0) {
+        throw "[ERROR] shutdown.exe exit code was not 0. It was actually $($shutdown.ExitCode)."
+    }
 }
 catch {
     $_ | Write-AWSQuickStartException
